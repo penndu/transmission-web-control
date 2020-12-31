@@ -17,7 +17,7 @@ transmission.torrents = {
 	fields: {
 		base: "id,name,status,hashString,totalSize,percentDone,addedDate,trackerStats,leftUntilDone,rateDownload,rateUpload,recheckProgress" + ",rateDownload,rateUpload,peersGettingFromUs,peersSendingToUs,uploadRatio,uploadedEver,downloadedEver,downloadDir,error,errorString,doneDate,queuePosition,activityDate",
 		status: "id,name,status,totalSize,percentDone,trackerStats,leftUntilDone,rateDownload,rateUpload,recheckProgress" + ",rateDownload,rateUpload,peersGettingFromUs,peersSendingToUs,uploadRatio,uploadedEver,downloadedEver,error,errorString,doneDate,queuePosition,activityDate",
-		config: "downloadLimit,downloadLimited,peer-limit,seedIdleLimit,seedIdleMode,seedRatioLimit,seedRatioMode,uploadLimit,uploadLimited"
+		config: "id,name,downloadLimit,downloadLimited,peer-limit,seedIdleLimit,seedIdleMode,seedRatioLimit,seedRatioMode,uploadLimit,uploadLimited"
 	},
 	// List of all the torrents that have been acquired
 	datas: {},
@@ -91,7 +91,9 @@ transmission.torrents = {
 		this.warning = new Array();
 		this.btItems = new Array();
 		// All download directories used by current torrents
-		transmission.downloadDirs = new Array();
+		if (transmission.downloadDirs == undefined){
+			transmission.downloadDirs = new Array();
+		}
 
 		var _Status = transmission._status;
 		this.status = {};
