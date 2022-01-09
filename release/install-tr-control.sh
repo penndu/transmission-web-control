@@ -85,6 +85,7 @@ MSG_NON_ROOT_USER="Unable to confirm if it is currently root, the installation m
 # 是否自动安装
 if [ "$ARG1" = "auto" ]; then
 	AUTOINSTALL=1
+	ROOT_FOLDER=$2
 else
 	ROOT_FOLDER=$ARG1
 fi
@@ -94,10 +95,13 @@ initValues() {
 	if [ ! -d "$TMP_FOLDER" ]; then
 		mkdir -p "$TMP_FOLDER"
 	fi
-
-	# 获取 Transmission 目录
-	getTransmissionPath
-
+    
+    # 判断是否指定了ROOT_FOLDER
+    if [ "$ROOT_FOLDER" == "" ]; then
+        # 获取 Transmission 目录
+        getTransmissionPath
+    fi
+    
 	# 判断 ROOT_FOLDER 是否为一个有效的目录，如果是则表明传递了一个有效路径
 	if [ -d "$ROOT_FOLDER" ]; then
 		showLog "$MSG_TR_WORK_FOLDER $ROOT_FOLDER/web"
@@ -247,7 +251,8 @@ download() {
 	fi
 	showLog "$MSG_DOWNLOADING"
 	echo ""
-	wget "$DOWNLOAD_URL" --no-check-certificate
+	# 下载的时候强制命名文件，以免被重定向后文件名发生改变
+	wget "$DOWNLOAD_URL" -O "$PACK_NAME" --no-check-certificate
 	# 判断是否下载成功
 	if [ $? -eq 0 ]; then
 		showLog "$MSG_DOWNLOAD_COMPLETE"
@@ -400,17 +405,19 @@ getTransmissionPath() {
 	# 用户如知道自己的 Transmission Web 所在的目录，直接修改这个值，以避免搜索所有目录
 	# ROOT_FOLDER="/usr/local/transmission/share/transmission"
 	# Fedora 或 Debian 发行版的默认 ROOT_FOLDER 目录
-	if [ -f "/etc/fedora-release" ] || [ -f "/etc/debian_version" ] || [ -f "/etc/openwrt_release" ]; then
-		ROOT_FOLDER="/usr/share/transmission"
-	fi
+	if [ ! -d "$ROOT_FOLDER" ]; then
+		if [ -f "/etc/fedora-release" ] || [ -f "/etc/debian_version" ] || [ -f "/etc/openwrt_release" ]; then
+			ROOT_FOLDER="/usr/share/transmission"
+		fi
 
-	if [ -f "/bin/freebsd-version" ]; then
-		ROOT_FOLDER="/usr/local/share/transmission"
-	fi
+		if [ -f "/bin/freebsd-version" ]; then
+			ROOT_FOLDER="/usr/local/share/transmission"
+		fi
 
-	# 群晖
-	if [ -f "/etc/synoinfo.conf" ]; then
-		ROOT_FOLDER="/var/packages/transmission/target/share/transmission"
+		# 群晖
+		if [ -f "/etc/synoinfo.conf" ]; then
+			ROOT_FOLDER="/var/packages/transmission/target/share/transmission"
+		fi
 	fi
 
 	if [ ! -d "$ROOT_FOLDER" ]; then
@@ -433,7 +440,9 @@ getTransmissionPath() {
 # 获取最后的发布版本号
 # 因在源码库里提交二进制文件不便于管理，以后将使用这种方式获取最新发布的版本
 getLatestReleases() {
-	VERSION=`wget -O - https://api.github.com/repos/ronggang/transmission-web-control/releases/latest | grep tag_name | head -n 1 | cut -d '"' -f 4`
+	# VERSION=`wget -O - https://api.github.com/repos/ronggang/transmission-web-control/releases/latest | grep tag_name | head -n 1 | cut -d '"' -f 4`
+	# 换为curl，避免OpenWRT下wget得到的内容没有分行，导致grep输出结果失效
+	VERSION=`curl -s https://api.github.com/repos/ronggang/transmission-web-control/releases/latest | grep tag_name | head -n 1 | cut -d '"' -f 4`
 }
 
 # 检测 Transmission 进程是否存在
